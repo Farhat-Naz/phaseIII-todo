@@ -8,7 +8,11 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import os
+import sys
 import logging
+
+# Add the current directory to Python path to ensure imports work
+sys.path.insert(0, os.path.dirname(__file__))
 
 from app.routers import auth, todos, chat
 
@@ -18,6 +22,7 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
+logger.info("Starting Vercel serverless function...")
 
 # Create FastAPI application WITHOUT lifespan for serverless
 app = FastAPI(
@@ -30,14 +35,18 @@ app = FastAPI(
 
 # CORS Configuration
 cors_origins_str = os.getenv("CORS_ORIGINS", "*")
-cors_origins = [origin.strip() for origin in cors_origins_str.split(",")]
+cors_origins = [origin.strip() for origin in cors_origins_str.split(",") if origin.strip()]
+
+# Log CORS origins for debugging
+logger.info(f"CORS Origins: {cors_origins}")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=cors_origins,
+    allow_origins=cors_origins if cors_origins else ["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 # Exception handlers
@@ -62,9 +71,14 @@ async def health_check():
     return {"status": "healthy", "version": "1.0.0"}
 
 # Include routers
+logger.info("Including routers...")
 app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
+logger.info("✓ Auth router included at /api/auth")
 app.include_router(todos.router, prefix="/api/todos", tags=["Todos"])
+logger.info("✓ Todos router included at /api/todos")
 app.include_router(chat.router, prefix="/api/chat", tags=["Chat"])
+logger.info("✓ Chat router included at /api/chat")
+logger.info("All routers loaded successfully!")
 
 # Root endpoint
 @app.get("/", tags=["Root"])
