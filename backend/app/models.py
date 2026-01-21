@@ -24,6 +24,179 @@ PriorityLevel = Literal["high", "normal"]
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
+class ChatSession(SQLModel, table=True):
+    """
+    ChatSession database model for chatbot conversation management (MCP Feature).
+
+    Attributes:
+        session_id: Unique identifier (UUID, auto-generated)
+        user_id: Owner of the session (foreign key to users.id)
+        title: Session title (auto-generated from first message, max 255 chars)
+        language: Preferred language for this session ('en' or 'ur', default 'en')
+        created_at: Session creation timestamp
+        last_activity_at: Last message timestamp (indexed for cleanup)
+
+    Relationships:
+        owner: Many-to-one relationship with User
+        messages: One-to-many relationship with ChatMessage records
+
+    Security:
+        - All queries MUST filter by user_id
+        - Session ownership verified before access
+        - CASCADE delete when user is deleted
+
+    Performance:
+        - user_id indexed for fast user-scoped queries
+        - last_activity_at indexed for session cleanup (30-day retention)
+
+    Cleanup:
+        - Sessions inactive > 30 days are automatically deleted
+    """
+    __tablename__ = "chat_session"
+
+    # Primary Key
+    session_id: UUID = Field(
+        default_factory=uuid4,
+        primary_key=True,
+        nullable=False,
+        description="Unique session identifier"
+    )
+
+    # Foreign Key to User
+    user_id: UUID = Field(
+        foreign_key="user.id",
+        nullable=False,
+        index=True,
+        description="Owner of the session (foreign key to users.id, CASCADE on delete)"
+    )
+
+    # Session Metadata
+    title: str = Field(
+        max_length=255,
+        nullable=False,
+        description="Session title (auto-generated from first user message)"
+    )
+    language: str = Field(
+        default="en",
+        max_length=2,
+        nullable=False,
+        description="Preferred language for this session: 'en' or 'ur' (default: 'en')"
+    )
+
+    # Timestamps
+    created_at: datetime = Field(
+        default_factory=datetime.utcnow,
+        nullable=False,
+        description="Session creation timestamp"
+    )
+    last_activity_at: datetime = Field(
+        default_factory=datetime.utcnow,
+        nullable=False,
+        index=True,
+        description="Last message timestamp (indexed for cleanup job)"
+    )
+
+    # Relationships
+    owner: Optional["User"] = Relationship(back_populates="chat_sessions")
+    messages: List["ChatMessage"] = Relationship(
+        back_populates="session",
+        sa_relationship_kwargs={"cascade": "all, delete-orphan"}
+    )
+
+    class Config:
+        """SQLModel configuration"""
+        json_schema_extra = {
+            "example": {
+                "title": "Buy groceries conversation",
+                "language": "en",
+            }
+        }
+
+
+class ChatMessage(SQLModel, table=True):
+    """
+    ChatMessage database model for conversation history (MCP Feature).
+
+    Attributes:
+        message_id: Unique identifier (UUID, auto-generated)
+        session_id: Parent session (foreign key to chat_session.session_id)
+        role: Message sender - "user" or "assistant"
+        content: Message text content (unlimited)
+        language: Language of the message content ('en' or 'ur', default 'en')
+        created_at: Message creation timestamp (indexed for ordering)
+
+    Relationships:
+        session: Many-to-one relationship with ChatSession
+
+    Security:
+        - Access controlled via session ownership (user_id from ChatSession)
+        - CASCADE delete when session is deleted
+
+    Performance:
+        - session_id indexed for fast session-scoped queries
+        - created_at indexed for chronological ordering
+        - Limit to last 50 messages per session for context building
+
+    Context Building:
+        - Fetch last 50 messages ordered by created_at DESC
+        - Format as: [{"role": "user", "content": "..."}, ...]
+    """
+    __tablename__ = "chat_message"
+
+    # Primary Key
+    message_id: UUID = Field(
+        default_factory=uuid4,
+        primary_key=True,
+        nullable=False,
+        description="Unique message identifier"
+    )
+
+    # Foreign Key to ChatSession
+    session_id: UUID = Field(
+        foreign_key="chat_session.session_id",
+        nullable=False,
+        index=True,
+        description="Parent session (foreign key to chat_session.session_id, CASCADE on delete)"
+    )
+
+    # Message Content
+    role: str = Field(
+        sa_column=sa.Column(sa.String(20), nullable=False),
+        description="Message sender: 'user' or 'assistant'"
+    )
+    content: str = Field(
+        sa_column=sa.Column(sa.Text, nullable=False),
+        description="Message text content (unlimited length)"
+    )
+    language: str = Field(
+        default="en",
+        max_length=2,
+        nullable=False,
+        description="Language of the message content: 'en' or 'ur' (default: 'en')"
+    )
+
+    # Timestamps
+    created_at: datetime = Field(
+        default_factory=datetime.utcnow,
+        nullable=False,
+        index=True,
+        description="Message creation timestamp (indexed for ordering)"
+    )
+
+    # Relationships
+    session: Optional[ChatSession] = Relationship(back_populates="messages")
+
+    class Config:
+        """SQLModel configuration"""
+        json_schema_extra = {
+            "example": {
+                "role": "user",
+                "content": "Add buy groceries to my tasks",
+                "language": "en",
+            }
+        }
+
+
 class User(SQLModel, table=True):
     """
     User database model for authentication and account management.
@@ -34,6 +207,7 @@ class User(SQLModel, table=True):
         hashed_password: Bcrypt-hashed password (never store plain text)
         name: User's display name (optional)
         email_verified: Email verification status (default: False)
+        language_preference: User's preferred language ('en' or 'ur', default 'en')
         last_login: Last successful login timestamp (indexed)
         created_at: Account creation timestamp
         updated_at: Last update timestamp
@@ -41,6 +215,7 @@ class User(SQLModel, table=True):
     Relationships:
         todos: One-to-many relationship with Todo items
         sessions: One-to-many relationship with Session records
+        chat_sessions: One-to-many relationship with ChatSession records
         password_reset_tokens: One-to-many relationship with PasswordResetToken
         email_verification_tokens: One-to-many relationship with EmailVerificationToken
 
@@ -89,6 +264,14 @@ class User(SQLModel, table=True):
         description="Email verification status (default: False)"
     )
 
+    # Language Preference (MCP Feature - US3)
+    language_preference: str = Field(
+        default="en",
+        max_length=2,
+        nullable=False,
+        description="User's preferred language: 'en' or 'ur' (default: 'en')"
+    )
+
     # Session Tracking (US4)
     last_login: Optional[datetime] = Field(
         default=None,
@@ -117,6 +300,10 @@ class User(SQLModel, table=True):
     )
     sessions: List["Session"] = Relationship(
         back_populates="user",
+        sa_relationship_kwargs={"cascade": "all, delete-orphan"}
+    )
+    chat_sessions: List["ChatSession"] = Relationship(
+        back_populates="owner",
         sa_relationship_kwargs={"cascade": "all, delete-orphan"}
     )
     password_reset_tokens: List["PasswordResetToken"] = Relationship(

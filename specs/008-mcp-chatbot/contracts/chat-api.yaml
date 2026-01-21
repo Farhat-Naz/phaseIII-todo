@@ -1,0 +1,377 @@
+openapi: 3.0.0
+info:
+  title: Chatbot API
+  version: 1.0.0
+  description: API endpoints for the MCP-based chatbot system with natural language task management
+paths:
+  /api/chat:
+    post:
+      summary: Send a chat message and receive AI response
+      description: |
+        Sends a user message to the chatbot, which processes it through the MCP server
+        and returns an AI-generated response. The chatbot can execute tools (task management)
+        based on natural language intent detection.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - message
+                - session_id
+              properties:
+                message:
+                  type: string
+                  maxLength: 5000
+                  description: User's chat message (max 5000 characters)
+                  example: "Add buy groceries to my tasks"
+                session_id:
+                  type: string
+                  format: uuid
+                  description: UUID of the chat session
+                  example: "123e4567-e89b-12d3-a456-426614174000"
+                language:
+                  type: string
+                  enum: [en, ur]
+                  default: en
+                  description: Message language (English or Urdu)
+      responses:
+        200:
+          description: Successful response from chatbot
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+                    description: AI-generated response text
+                    example: "I've added 'buy groceries' to your tasks."
+                  tool_calls:
+                    type: array
+                    description: List of MCP tools executed during this request
+                    items:
+                      type: object
+                      properties:
+                        tool:
+                          type: string
+                          description: Name of the tool called
+                          example: "add_task"
+                        result:
+                          type: object
+                          description: Tool execution result
+                          example:
+                            task_id: "t1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                            title: "buy groceries"
+                            completed: false
+        400:
+          description: Invalid input (message too long, invalid session_id format)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        401:
+          description: Missing or invalid JWT token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        404:
+          description: Session not found or user does not own session
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        500:
+          description: MCP server error or database failure
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/chat/sessions:
+    get:
+      summary: List all chat sessions for authenticated user
+      description: |
+        Returns a paginated list of all chat sessions belonging to the authenticated user,
+        ordered by last activity (most recent first).
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          description: Page number (1-indexed)
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: page_size
+          in: query
+          description: Number of sessions per page
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        200:
+          description: Session list retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Session'
+                  total:
+                    type: integer
+                    description: Total number of sessions
+                    example: 42
+                  page:
+                    type: integer
+                    description: Current page number
+                    example: 1
+                  page_size:
+                    type: integer
+                    description: Number of items per page
+                    example: 20
+                  total_pages:
+                    type: integer
+                    description: Total number of pages
+                    example: 3
+                  has_next:
+                    type: boolean
+                    description: Whether there are more pages
+                    example: true
+                  has_prev:
+                    type: boolean
+                    description: Whether there are previous pages
+                    example: false
+        401:
+          description: Missing or invalid JWT token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    post:
+      summary: Create a new chat session
+      description: |
+        Creates a new chat session for the authenticated user. If title is not provided,
+        it will be auto-generated from the first message.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  maxLength: 255
+                  description: Session title (optional, auto-generated if omitted)
+                  example: "Shopping List Planning"
+                language:
+                  type: string
+                  enum: [en, ur]
+                  default: en
+                  description: Preferred language for this session
+      responses:
+        201:
+          description: Session created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Session'
+        400:
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        401:
+          description: Missing or invalid JWT token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/chat/sessions/{session_id}/messages:
+    get:
+      summary: Get conversation history for a session
+      description: |
+        Retrieves paginated message history for a specific chat session.
+        Messages are returned in chronological order (oldest first).
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          description: UUID of the chat session
+          schema:
+            type: string
+            format: uuid
+        - name: limit
+          in: query
+          description: Maximum number of messages to return
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+        - name: before
+          in: query
+          description: Fetch messages before this message_id (for pagination)
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: Message list retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  messages:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Message'
+                  has_more:
+                    type: boolean
+                    description: Whether there are more messages available
+                    example: false
+        401:
+          description: Missing or invalid JWT token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        404:
+          description: Session not found or user does not own session
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT access token obtained from /api/auth/login
+
+  schemas:
+    Session:
+      type: object
+      required:
+        - session_id
+        - user_id
+        - title
+        - language
+        - created_at
+        - last_activity_at
+      properties:
+        session_id:
+          type: string
+          format: uuid
+          description: Unique session identifier
+          example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        user_id:
+          type: string
+          format: uuid
+          description: User who owns this session
+          example: "u1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        title:
+          type: string
+          maxLength: 255
+          description: Session title (auto-generated from first message)
+          example: "Shopping list planning"
+        language:
+          type: string
+          enum: [en, ur]
+          description: Preferred language for this session
+          example: "en"
+        created_at:
+          type: string
+          format: date-time
+          description: Session creation timestamp
+          example: "2026-01-20T14:30:00Z"
+        last_activity_at:
+          type: string
+          format: date-time
+          description: Last message timestamp (updated on each message)
+          example: "2026-01-20T15:45:00Z"
+
+    Message:
+      type: object
+      required:
+        - message_id
+        - session_id
+        - role
+        - content
+        - language
+        - created_at
+      properties:
+        message_id:
+          type: string
+          format: uuid
+          description: Unique message identifier
+          example: "m1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        session_id:
+          type: string
+          format: uuid
+          description: Session this message belongs to
+          example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        role:
+          type: string
+          enum: [user, assistant]
+          description: Message sender (user or AI assistant)
+          example: "user"
+        content:
+          type: string
+          maxLength: 5000
+          description: Message text content
+          example: "Add buy groceries to my tasks"
+        language:
+          type: string
+          enum: [en, ur]
+          description: Message language
+          example: "en"
+        created_at:
+          type: string
+          format: date-time
+          description: Message creation timestamp
+          example: "2026-01-20T14:30:00Z"
+
+    Error:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: object
+          required:
+            - message
+          properties:
+            message:
+              type: string
+              description: Human-readable error message
+              example: "Session not found"
+            code:
+              type: string
+              description: Machine-readable error code
+              example: "SESSION_NOT_FOUND"
+            details:
+              type: object
+              description: Additional error details
+              example: {}

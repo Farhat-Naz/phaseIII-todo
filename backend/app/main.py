@@ -27,7 +27,7 @@ import os
 import logging
 
 from app.database import create_db_and_tables, test_connection
-from app.routers import auth, todos
+from app.routers import auth, todos, chat
 
 # Configure logging
 logging.basicConfig(
@@ -229,7 +229,10 @@ app.include_router(auth.router, prefix="/api/auth")
 # Mount todos router
 app.include_router(todos.router, prefix="/api/todos", tags=["todos"])
 
-logger.info("API routers registered: /api/auth, /api/todos")
+# Mount chat router (MCP-based chatbot)
+app.include_router(chat.router, prefix="/api/chat", tags=["chat"])
+
+logger.info("API routers registered: /api/auth, /api/todos, /api/chat")
 
 # ============================================
 # Root Endpoint
@@ -259,7 +262,8 @@ async def root() -> dict:
         "health": "/health",
         "endpoints": {
             "auth": "/api/auth",
-            "todos": "/api/todos"
+            "todos": "/api/todos",
+            "chat": "/api/chat"
         }
     }
 

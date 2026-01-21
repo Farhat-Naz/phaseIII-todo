@@ -132,5 +132,33 @@
     "multilingualDesc": "Full support for English and Urdu with RTL layout",
     "modern": "Modern UI",
     "modernDesc": "Clean, responsive design with dark mode support"
+  },
+  "chat": {
+    "title": "Chat",
+    "newChat": "New Chat",
+    "sessions": "Chat Sessions",
+    "noSessions": "No chat sessions yet",
+    "startNewChat": "Start a new chat",
+    "inputPlaceholder": "Type a message...",
+    "inputPlaceholderUrdu": "Type your message here...",
+    "sendMessage": "Send message",
+    "sending": "Sending...",
+    "typing": "Typing...",
+    "error": "Error",
+    "errorSendingMessage": "Error sending message",
+    "retry": "Retry",
+    "loadingHistory": "Loading conversation history...",
+    "errorLoadingHistory": "Error loading conversation history",
+    "assistant": "Assistant",
+    "you": "You",
+    "noMessages": "No messages yet",
+    "sessionTitle": "Chat Session",
+    "deleteSession": "Delete session",
+    "deleteSessionConfirm": "Are you sure you want to delete this chat session?",
+    "copiedToClipboard": "Copied to clipboard",
+    "copyMessage": "Copy message",
+    "switchToEnglish": "Switch to English",
+    "switchToUrdu": "Switch to Urdu",
+    "languageToggle": "Toggle language"
   }
 }

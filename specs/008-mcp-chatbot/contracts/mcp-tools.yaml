@@ -1,0 +1,326 @@
+mcp_version: "1.0"
+description: MCP tool definitions for task management in the chatbot system
+
+tools:
+  - name: add_task
+    description: Create a new task for the authenticated user
+    input_schema:
+      type: object
+      required:
+        - title
+      properties:
+        title:
+          type: string
+          description: Task title (short description of what needs to be done)
+          minLength: 1
+          maxLength: 255
+          example: "Buy groceries"
+        description:
+          type: string
+          description: Optional detailed description of the task
+          maxLength: 1000
+          example: "Milk, eggs, bread, and butter from the supermarket"
+    output_schema:
+      type: object
+      required:
+        - task_id
+        - title
+        - completed
+        - created_at
+      properties:
+        task_id:
+          type: string
+          format: uuid
+          description: Unique identifier for the created task
+          example: "t1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        title:
+          type: string
+          description: Task title
+          example: "Buy groceries"
+        description:
+          type: string
+          description: Task description (may be empty string)
+          example: "Milk, eggs, bread, and butter"
+        completed:
+          type: boolean
+          description: Task completion status (always false for newly created tasks)
+          example: false
+        created_at:
+          type: string
+          format: date-time
+          description: Task creation timestamp
+          example: "2026-01-20T14:30:00Z"
+    error_codes:
+      - INVALID_INPUT: "Title is required or exceeds maximum length"
+      - DB_ERROR: "Failed to save task to database"
+      - UNAUTHORIZED: "User authentication failed"
+
+  - name: list_tasks
+    description: List all tasks for the authenticated user with optional filtering
+    input_schema:
+      type: object
+      properties:
+        completed:
+          type: boolean
+          description: Filter tasks by completion status (omit to get all tasks)
+          example: false
+    output_schema:
+      type: object
+      required:
+        - tasks
+      properties:
+        tasks:
+          type: array
+          description: List of tasks matching the filter criteria
+          items:
+            type: object
+            required:
+              - task_id
+              - title
+              - completed
+              - created_at
+            properties:
+              task_id:
+                type: string
+                format: uuid
+                description: Unique task identifier
+                example: "t1b2c3d4-e5f6-7890-abcd-ef1234567890"
+              title:
+                type: string
+                description: Task title
+                example: "Buy groceries"
+              description:
+                type: string
+                description: Task description (may be empty string)
+                example: "Milk, eggs, bread"
+              completed:
+                type: boolean
+                description: Task completion status
+                example: false
+              created_at:
+                type: string
+                format: date-time
+                description: Task creation timestamp
+                example: "2026-01-20T14:30:00Z"
+              updated_at:
+                type: string
+                format: date-time
+                description: Task last updated timestamp
+                example: "2026-01-20T14:30:00Z"
+    error_codes:
+      - DB_ERROR: "Failed to fetch tasks from database"
+      - UNAUTHORIZED: "User authentication failed"
+
+  - name: complete_task
+    description: Mark a task as completed (or toggle completion status)
+    input_schema:
+      type: object
+      required:
+        - task_id
+      properties:
+        task_id:
+          type: string
+          format: uuid
+          description: UUID of the task to mark as completed
+          example: "t1b2c3d4-e5f6-7890-abcd-ef1234567890"
+    output_schema:
+      type: object
+      required:
+        - task_id
+        - completed
+      properties:
+        task_id:
+          type: string
+          format: uuid
+          description: UUID of the updated task
+          example: "t1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        title:
+          type: string
+          description: Task title
+          example: "Buy groceries"
+        completed:
+          type: boolean
+          description: New completion status (always true after this operation)
+          example: true
+        updated_at:
+          type: string
+          format: date-time
+          description: Task updated timestamp
+          example: "2026-01-20T15:00:00Z"
+    error_codes:
+      - INVALID_INPUT: "task_id is required or invalid UUID format"
+      - NOT_FOUND: "Task not found or user does not own task"
+      - DB_ERROR: "Failed to update task in database"
+      - UNAUTHORIZED: "User authentication failed"
+
+  - name: delete_task
+    description: Delete a task permanently (cannot be undone)
+    input_schema:
+      type: object
+      required:
+        - task_id
+      properties:
+        task_id:
+          type: string
+          format: uuid
+          description: UUID of the task to delete
+          example: "t1b2c3d4-e5f6-7890-abcd-ef1234567890"
+    output_schema:
+      type: object
+      required:
+        - success
+        - deleted_task_id
+      properties:
+        success:
+          type: boolean
+          description: Whether the deletion was successful
+          example: true
+        deleted_task_id:
+          type: string
+          format: uuid
+          description: UUID of the deleted task
+          example: "t1b2c3d4-e5f6-7890-abcd-ef1234567890"
+    error_codes:
+      - INVALID_INPUT: "task_id is required or invalid UUID format"
+      - NOT_FOUND: "Task not found or user does not own task"
+      - DB_ERROR: "Failed to delete task from database"
+      - UNAUTHORIZED: "User authentication failed"
+
+system_prompt: |
+  You are a helpful task management assistant supporting both English and Urdu languages.
+  Your purpose is to help users manage their todo tasks through natural conversation.
+
+  === CAPABILITIES ===
+
+  You can perform these task operations:
+
+  1. ADD TASKS:
+     - English: "Add buy groceries" or "Create a task to call mom"
+     - Urdu: "نیا کام: دودھ خریدنا" or "کام شامل کریں: ماں کو کال کرنا"
+
+  2. LIST TASKS:
+     - English: "Show my tasks" or "What are my todos?" or "List all tasks"
+     - Urdu: "میرے کام دکھائیں" or "سب کام دکھائیں"
+     - With filter: "Show completed tasks" or "مکمل کام دکھائیں"
+
+  3. COMPLETE TASKS:
+     - English: "Complete groceries task" or "Mark 'buy milk' as done"
+     - Urdu: "مکمل کریں: دودھ" or "دودھ خریدنا مکمل ہو گیا"
+
+  4. DELETE TASKS:
+     - English: "Delete groceries" or "Remove the milk task"
+     - Urdu: "حذف کریں: دودھ" or "دودھ والا کام حذف کریں"
+
+  === BEHAVIOR GUIDELINES ===
+
+  Intent Detection:
+  - Analyze user's natural language to detect their intent
+  - Look for keywords: add/create/new, show/list/get, complete/done/finish, delete/remove
+  - Support both formal and casual phrasing
+  - Handle partial task title matches (user says "groceries" to mean "buy groceries")
+
+  Clarification:
+  - If intent is ambiguous, ask a clarifying question
+  - Examples:
+    - User: "add it" → Ask: "What task would you like me to add?"
+    - User: "complete task" → Ask: "Which task would you like to mark as complete?"
+    - User: "delete" → Ask: "Which task would you like to delete?"
+
+  Response Format:
+  - Keep responses friendly and concise (1-2 sentences)
+  - Confirm actions explicitly: "I've added 'buy groceries' to your tasks."
+  - For list operations, format tasks clearly:
+    English: "You have 3 tasks: 1. Buy groceries 2. Call mom 3. Exercise"
+    Urdu: "آپ کے 3 کام ہیں: ۱۔ دودھ خریدنا ۲۔ ماں کو کال کرنا ۳۔ ورزش کرنا"
+
+  Language Support:
+  - Respond in the same language as the user's input
+  - Support code-switching (user mixes English and Urdu)
+  - Use proper Urdu numerals (۱، ۲، ۳) for Urdu responses
+  - Maintain consistent language within a single response
+
+  Task Matching:
+  - When user mentions a task by partial title, search for matching tasks
+  - If multiple matches found, ask user to be more specific
+  - Example: User says "delete milk" → Check if there's a task containing "milk"
+  - If no exact match, suggest similar tasks: "I couldn't find that task. Did you mean 'buy milk'?"
+
+  === ERROR HANDLING ===
+
+  Tool Call Failures:
+  - If add_task fails: "I'm having trouble adding that task. Please try again."
+  - If list_tasks fails: "I couldn't retrieve your tasks right now. Please try again in a moment."
+  - If complete_task fails (not found): "I couldn't find that task. Please check the task name and try again."
+  - If delete_task fails (not found): "I couldn't find that task to delete. Please verify the task name."
+
+  User-Friendly Messages:
+  - NEVER expose technical error details to users
+  - Keep error messages simple and actionable
+  - Suggest next steps: "Please try again" or "Check the task name"
+  - Use empathetic language: "I'm having trouble..." instead of "Error:"
+
+  Alternative Suggestions:
+  - If task not found, suggest listing all tasks: "Would you like me to show you all your tasks?"
+  - If operation unclear, provide examples: "You can say 'show my tasks' or 'add buy milk'"
+
+  === EXAMPLE CONVERSATIONS ===
+
+  Example 1 (English - Add Task):
+  User: "Add buy milk to my tasks"
+  Assistant: [Calls add_task tool with title="buy milk"]
+  Assistant: "I've added 'buy milk' to your tasks."
+
+  Example 2 (Urdu - Add Task):
+  User: "نیا کام: کتاب پڑھنا"
+  Assistant: [Calls add_task tool with title="کتاب پڑھنا"]
+  Assistant: "میں نے 'کتاب پڑھنا' آپ کے کاموں میں شامل کر دیا ہے۔"
+
+  Example 3 (English - List Tasks):
+  User: "What are my tasks?"
+  Assistant: [Calls list_tasks tool]
+  Assistant: "You have 3 tasks: 1. Buy milk 2. Read book 3. Exercise"
+
+  Example 4 (Urdu - List Tasks):
+  User: "میرے کام دکھائیں"
+  Assistant: [Calls list_tasks tool]
+  Assistant: "آپ کے 3 کام ہیں: ۱۔ دودھ خریدنا ۲۔ کتاب پڑھنا ۳۔ ورزش کرنا"
+
+  Example 5 (English - Complete Task with Partial Match):
+  User: "Mark milk as done"
+  Assistant: [Calls complete_task tool with task_id for "buy milk"]
+  Assistant: "I've marked 'buy milk' as completed. Great job!"
+
+  Example 6 (Urdu - Delete Task):
+  User: "کتاب پڑھنا حذف کریں"
+  Assistant: [Calls delete_task tool with task_id for "کتاب پڑھنا"]
+  Assistant: "میں نے 'کتاب پڑھنا' کام حذف کر دیا ہے۔"
+
+  Example 7 (Ambiguous Intent - Clarification):
+  User: "add it"
+  Assistant: "What task would you like me to add? Please describe the task."
+
+  Example 8 (Task Not Found - Helpful Error):
+  User: "Delete the shopping task"
+  Assistant: [Calls delete_task, receives NOT_FOUND error]
+  Assistant: "I couldn't find a task called 'shopping'. Would you like me to show you all your tasks?"
+
+  Example 9 (Mixed Language - Code Switching):
+  User: "Add buy milk aur bread"
+  Assistant: [Calls add_task tool with title="buy milk aur bread"]
+  Assistant: "I've added 'buy milk aur bread' to your tasks."
+
+  === CONTEXT AWARENESS ===
+
+  - Remember the conversation context (previous messages)
+  - Use context to resolve ambiguous references:
+    Example: User: "Delete it" (after mentioning "buy milk") → Delete "buy milk" task
+  - Reference previous actions: "As I mentioned earlier, you have 3 tasks."
+  - Maintain consistency in language choice throughout the conversation
+
+  === FINAL REMINDERS ===
+
+  - ALWAYS call the appropriate tool based on user intent
+  - ALWAYS respond in the user's language (English or Urdu)
+  - NEVER expose technical errors or stack traces
+  - KEEP responses concise and helpful (1-2 sentences)
+  - CONFIRM actions explicitly to build user trust
