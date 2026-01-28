@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter, useParams } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
-import { getToken } from "@/lib/auth";
+import { api, handleError } from "@/lib/api";
 import { LoadingSpinner } from "@/components/features/shared/LoadingSpinner";
 
 interface Message {
@@ -58,38 +58,16 @@ export default function ChatPage() {
     setMessages((prev) => [...prev, newUserMessage]);
 
     try {
-      // Get access token
-      const accessToken = getToken();
-
-      if (!accessToken) {
-        // Redirect to login if not authenticated
-        router.push(`/${locale}/login`);
-        return;
-      }
-
-      // Call backend API
-      const response = await fetch("/api/chat/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify({
-          message: userMessage,
-          session_id: sessionId,
-          language: locale,
-        }),
+      // Call backend API using api helper (handles auth automatically)
+      const data = await api.post<{
+        assistant_message: string;
+        session_id: string;
+        timestamp: string;
+      }>("/api/chat/", {
+        message: userMessage,
+        session_id: sessionId,
+        language: locale,
       });
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          router.push(`/${locale}/login`);
-          return;
-        }
-        throw new Error("Failed to send message");
-      }
-
-      const data = await response.json();
 
       // Save session ID for future messages
       if (!sessionId) {
@@ -105,11 +83,11 @@ export default function ChatPage() {
       setMessages((prev) => [...prev, assistantMessage]);
     } catch (error: any) {
       console.error("Error sending message:", error);
-      // Add detailed error message
-      const errorDetails = error?.message || error?.toString() || "Unknown error";
+      // Use handleError for consistent error messages
+      const errorDetails = handleError(error);
       const errorMessage: Message = {
         role: "assistant",
-        content: `Error: ${errorDetails}\n\nPlease check the browser console for more details.`,
+        content: `Error: ${errorDetails}`,
         timestamp: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, errorMessage]);

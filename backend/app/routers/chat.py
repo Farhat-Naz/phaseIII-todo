@@ -30,7 +30,10 @@ def get_openai_client():
             from openai import OpenAI
             api_key = os.getenv("OPENAI_API_KEY")
             if not api_key:
-                raise ValueError("OPENAI_API_KEY environment variable not set")
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="OPENAI_API_KEY environment variable not set. Please configure it in Vercel dashboard."
+                )
             _openai_client = OpenAI(api_key=api_key)
         except ImportError:
             raise HTTPException(
