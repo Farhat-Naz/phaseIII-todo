@@ -4,5 +4,11 @@
   "devCommand": "npm run dev",
   "installCommand": "npm install",
   "framework": "nextjs",
-  "regions": ["sin1"]
+  "regions": ["sin1"],
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "https://phase-iii-todo-8awlrt819-farhats-projects-27800a4d.vercel.app/api/$1"
+    }
+  ]
 }
