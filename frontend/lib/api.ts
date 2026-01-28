@@ -75,7 +75,10 @@ async function handleApiError(response: Response): Promise<never> {
   // Clear token and redirect to login on authentication failure
   if (response.status === 401 && typeof window !== 'undefined') {
     removeToken();
-    window.location.href = '/login';
+    // Extract locale from current path (e.g., /en/dashboard -> en)
+    const pathParts = window.location.pathname.split('/').filter(Boolean);
+    const locale = ['en', 'ur'].includes(pathParts[0]) ? pathParts[0] : 'en';
+    window.location.href = `/${locale}/login`;
   }
 
   throw errorDetails;
