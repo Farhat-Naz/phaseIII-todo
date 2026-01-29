@@ -225,7 +225,6 @@ When listing tasks, format them in a clear, numbered list. When adding or comple
             return self._extract_text_response(response)
 
         except Exception as e:
-            import sys
             print(f"OpenAI API error: {e}", file=sys.stderr)
             raise RuntimeError(f"Failed to communicate with OpenAI API: {str(e)}")
 
