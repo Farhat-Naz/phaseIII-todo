@@ -11,25 +11,27 @@ import os
 import sys
 import logging
 
-# Add the current directory to Python path to ensure imports work
-sys.path.insert(0, os.path.dirname(__file__))
-
-from app.routers import auth, todos
-# Try to import chat router (requires MCP dependencies)
-try:
-    from app.routers import chat
-    CHAT_AVAILABLE = True
-except ImportError as e:
-    logger.warning(f"Chat router not available (missing dependencies): {e}")
-    CHAT_AVAILABLE = False
-
-# Configure logging
+# Configure logging FIRST
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
+
+# Add the current directory to Python path to ensure imports work
+sys.path.insert(0, os.path.dirname(__file__))
+
 logger.info("Starting Vercel serverless function...")
+
+from app.routers import auth, todos
+# Try to import chat router (all dependencies should be available)
+try:
+    from app.routers import chat
+    CHAT_AVAILABLE = True
+    logger.info("✓ Chat router imported successfully")
+except ImportError as e:
+    logger.warning(f"⚠ Chat router not available (missing dependencies): {e}")
+    CHAT_AVAILABLE = False
 
 # Create FastAPI application WITHOUT lifespan for serverless
 app = FastAPI(
