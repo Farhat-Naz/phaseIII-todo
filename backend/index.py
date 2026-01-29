@@ -70,6 +70,20 @@ async def general_exception_handler(request: Request, exc: Exception):
 async def health_check():
     return {"status": "healthy", "version": "1.0.0"}
 
+# Environment check endpoint (for debugging)
+@app.get("/debug/env", tags=["Debug"])
+async def check_env():
+    """Check if critical environment variables are set."""
+    openai_key = os.getenv("OPENAI_API_KEY", "")
+    return {
+        "openai_key_set": bool(openai_key and openai_key != "your_openai_api_key_here"),
+        "openai_key_length": len(openai_key) if openai_key else 0,
+        "openai_key_prefix": openai_key[:10] + "..." if len(openai_key) > 10 else "NOT_SET",
+        "ai_model": os.getenv("AI_MODEL", "NOT_SET"),
+        "database_url_set": bool(os.getenv("DATABASE_URL")),
+        "cors_origins": os.getenv("CORS_ORIGINS", "NOT_SET"),
+    }
+
 # Include routers
 logger.info("Including routers...")
 app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
