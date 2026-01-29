@@ -5,8 +5,8 @@ This module provides a direct integration with the OpenAI API,
 handling conversation management and function execution.
 """
 import os
-import sys
 import json
+import logging
 from typing import Dict, Any, List, Optional
 from uuid import UUID
 from openai import OpenAI
@@ -17,6 +17,8 @@ from app.mcp.tools import (
     complete_task_handler,
     delete_task_handler,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class OpenAIClient:
@@ -159,7 +161,7 @@ When listing tasks, format them in a clear, numbered list. When adding or comple
                 {"role": "system", "content": self.SYSTEM_PROMPT}
             ] + openai_messages
 
-            print(f"[OpenAI Debug] Sending {len(openai_messages)} messages to {self.model}", file=sys.stderr)
+            logger.debug(f"[OpenAI Debug] Sending {len(openai_messages)} messages to {self.model}")
 
             # Initial API call
             response = self.client.chat.completions.create(
@@ -169,7 +171,7 @@ When listing tasks, format them in a clear, numbered list. When adding or comple
                 tool_choice="auto",
             )
 
-            print(f"[OpenAI Debug] Received response, stop_reason: {response.choices[0].finish_reason}", file=sys.stderr)
+            logger.debug(f"[OpenAI Debug] Received response, stop_reason: {response.choices[0].finish_reason}")
 
             # Handle function calls in a loop
             turns = 0
@@ -225,7 +227,7 @@ When listing tasks, format them in a clear, numbered list. When adding or comple
             return self._extract_text_response(response)
 
         except Exception as e:
-            print(f"OpenAI API error: {e}", file=sys.stderr)
+            logger.error(f"OpenAI API error: {e}", exc_info=True)
             raise RuntimeError(f"Failed to communicate with OpenAI API: {str(e)}")
 
     def _convert_messages(self, messages: List[Dict[str, str]]) -> List[Dict[str, str]]:
