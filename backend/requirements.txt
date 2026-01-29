@@ -1,24 +1,15 @@
-# Vercel deployment requirements - without MCP for now
-# Core FastAPI
+# Vercel deployment requirements (working configuration)
 fastapi==0.115.6
-uvicorn[standard]==0.34.0
-python-multipart==0.0.20
-mangum==0.17.0
-
-# Database
+uvicorn==0.34.0
 sqlmodel==0.0.22
 sqlalchemy==2.0.36
-psycopg[binary]==3.2.13
-alembic==1.14.0
-greenlet==3.1.1
-
-# Authentication
+psycopg[binary]==3.2.3
+python-dotenv==1.0.1
+pydantic==2.10.6
 passlib[bcrypt]==1.7.4
 python-jose[cryptography]==3.3.0
+python-multipart==0.0.20
 email-validator==2.2.0
-
-# Environment
-python-dotenv==1.0.1
-
-# Pydantic (compatible with sqlmodel 0.0.22)
-pydantic==2.9.2
+greenlet==3.1.1
+alembic==1.14.0
+openai>=1.0.0

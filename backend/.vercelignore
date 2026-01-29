@@ -52,3 +52,8 @@ alembic/
 # Old/backup files
 *_old.py
 *_backup.py
+*.backup
+requirements.txt.backup
+
+# Unused API directory (using direct index.py instead)
+api/
