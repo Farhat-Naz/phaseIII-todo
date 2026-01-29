@@ -29,6 +29,25 @@ logger = logging.getLogger(__name__)
 router = APIRouter(tags=["Chat"])
 
 
+@router.get("/test", summary="Test OpenAI client initialization")
+async def test_openai_client():
+    """Test endpoint to verify OpenAI client can be initialized."""
+    try:
+        client = get_openai_client()
+        return {
+            "status": "success",
+            "message": "OpenAI client initialized successfully",
+            "model": client.model,
+        }
+    except Exception as e:
+        logger.error(f"OpenAI client test failed: {e}", exc_info=True)
+        return {
+            "status": "error",
+            "message": str(e),
+            "detail": "Check OPENAI_API_KEY environment variable",
+        }
+
+
 class ChatRequest(BaseModel):
     """Request model for chat endpoint."""
     message: str
@@ -76,7 +95,10 @@ async def send_message(
     - Conversation continues until natural response
     """
     try:
+        logger.info(f"Chat request from user {current_user.id}: {request.message[:50]}...")
+
         # Get or create chat session
+        logger.debug("Getting or creating chat session...")
         session = await _get_or_create_session(
             db=db,
             user_id=current_user.id,
@@ -84,9 +106,12 @@ async def send_message(
             language=request.language,
             first_message=request.message,
         )
+        logger.debug(f"Chat session: {session.session_id}")
 
         # Load conversation history from database
+        logger.debug("Loading conversation history...")
         history = await _load_conversation_history(db, session.session_id)
+        logger.debug(f"Loaded {len(history)} messages from history")
 
         # Add user message to history
         history.append({
@@ -95,6 +120,7 @@ async def send_message(
         })
 
         # Save user message to database
+        logger.debug("Saving user message to database...")
         user_msg = ChatMessage(
             session_id=session.session_id,
             role="user",
@@ -103,13 +129,33 @@ async def send_message(
         )
         db.add(user_msg)
         db.commit()
+        logger.debug("User message saved")
 
         # Get OpenAI client and send request with MCP tools
-        client = get_openai_client()
-        assistant_response = await client.chat(
-            messages=history,
-            user_id=current_user.id,
-        )
+        logger.info("Initializing OpenAI client...")
+        try:
+            client = get_openai_client()
+            logger.info("OpenAI client initialized successfully")
+        except Exception as client_error:
+            logger.error(f"Failed to initialize OpenAI client: {client_error}", exc_info=True)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"OpenAI client initialization failed: {str(client_error)}"
+            )
+
+        logger.info("Sending request to OpenAI...")
+        try:
+            assistant_response = await client.chat(
+                messages=history,
+                user_id=current_user.id,
+            )
+            logger.info(f"Received response from OpenAI: {assistant_response[:100]}...")
+        except Exception as openai_error:
+            logger.error(f"OpenAI API call failed: {openai_error}", exc_info=True)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"OpenAI API error: {str(openai_error)}"
+            )
 
         # Save assistant response to database
         assistant_msg = ChatMessage(
