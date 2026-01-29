@@ -14,7 +14,14 @@ import logging
 # Add the current directory to Python path to ensure imports work
 sys.path.insert(0, os.path.dirname(__file__))
 
-from app.routers import auth, todos, chat
+from app.routers import auth, todos
+# Try to import chat router (requires MCP dependencies)
+try:
+    from app.routers import chat
+    CHAT_AVAILABLE = True
+except ImportError as e:
+    logger.warning(f"Chat router not available (missing dependencies): {e}")
+    CHAT_AVAILABLE = False
 
 # Configure logging
 logging.basicConfig(
@@ -90,8 +97,14 @@ app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
 logger.info("✓ Auth router included at /api/auth")
 app.include_router(todos.router, prefix="/api/todos", tags=["Todos"])
 logger.info("✓ Todos router included at /api/todos")
-app.include_router(chat.router, prefix="/api/chat", tags=["Chat"])
-logger.info("✓ Chat router included at /api/chat")
+
+# Conditionally include chat router if dependencies available
+if CHAT_AVAILABLE:
+    app.include_router(chat.router, prefix="/api/chat", tags=["Chat"])
+    logger.info("✓ Chat router included at /api/chat")
+else:
+    logger.warning("⚠ Chat router skipped (MCP dependencies not installed)")
+
 logger.info("All routers loaded successfully!")
 
 # Root endpoint
