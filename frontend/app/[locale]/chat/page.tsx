@@ -7,6 +7,10 @@ import { useAuth } from "@/hooks/useAuth";
 import { api, handleError } from "@/lib/api";
 import { LoadingSpinner } from "@/components/features/shared/LoadingSpinner";
 
+// Configure for static export
+export const dynamic = 'force-static';
+export const dynamicParams = true;
+
 interface Message {
   role: "user" | "assistant";
   content: string;
