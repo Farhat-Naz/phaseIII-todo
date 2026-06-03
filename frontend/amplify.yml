@@ -15,7 +15,3 @@ frontend:
     paths:
       - node_modules/**/*
       - .next/cache/**/*
-
-# Environment variables that should be set in Amplify Console:
-# NEXT_PUBLIC_API_URL - Your AWS Lambda API Gateway URL
-# Example: https://xxxxxxxxxx.execute-api.us-east-1.amazonaws.com/Prod
