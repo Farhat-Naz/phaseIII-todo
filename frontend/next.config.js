@@ -6,7 +6,10 @@ const withNextIntl = createNextIntlPlugin('./i18n.ts');
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  output: 'export',
+  trailingSlash: true,
   images: {
+    unoptimized: true,
     domains: [],
   },
   // Fix Vercel workspace detection warning
