@@ -1,0 +1,109 @@
+service: todo-api
+
+provider:
+  name: aws
+  runtime: python3.11
+  region: ap-south-1
+  stage: ${opt:stage, 'dev'}
+  timeout: 30
+  memorySize: 512
+  stackName: ${self:service}-${self:provider.stage}
+  deploymentMethod: direct
+
+  # Environment variables
+  environment:
+    DATABASE_URL: ${env:DATABASE_URL}
+    SECRET_KEY: ${env:SECRET_KEY}
+    REFRESH_TOKEN_SECRET: ${env:REFRESH_TOKEN_SECRET}
+    ALGORITHM: ${env:ALGORITHM, 'HS256'}
+    ACCESS_TOKEN_EXPIRE_MINUTES: ${env:ACCESS_TOKEN_EXPIRE_MINUTES, '30'}
+    REFRESH_TOKEN_EXPIRE_DAYS: ${env:REFRESH_TOKEN_EXPIRE_DAYS, '7'}
+    CORS_ORIGINS: ${env:CORS_ORIGINS}
+    EMAIL_PROVIDER: ${env:EMAIL_PROVIDER, 'sendgrid'}
+    SENDGRID_API_KEY: ${env:SENDGRID_API_KEY, ''}
+    EMAIL_FROM_ADDRESS: ${env:EMAIL_FROM_ADDRESS}
+    EMAIL_FROM_NAME: ${env:EMAIL_FROM_NAME, 'TodoApp'}
+    FRONTEND_URL: ${env:FRONTEND_URL}
+    OPENAI_API_KEY: ${env:OPENAI_API_KEY, ''}
+    AI_MODEL: ${env:AI_MODEL, 'gpt-4o'}
+    LOG_LEVEL: ${env:LOG_LEVEL, 'INFO'}
+
+  # IAM role statements for Lambda function
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+          Resource: "arn:aws:logs:*:*:*"
+
+functions:
+  api:
+    handler: lambda_handler.handler
+    events:
+      - http:
+          path: /
+          method: ANY
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: false
+      - http:
+          path: /{proxy+}
+          method: ANY
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: false
+
+plugins:
+  - serverless-python-requirements
+
+custom:
+  pythonRequirements:
+    dockerizePip: true
+    dockerImage: public.ecr.aws/sam/build-python3.11:latest
+    layer: false
+    slim: false
+    strip: false
+    fileName: requirements.txt
+    useDownloadCache: false
+    useStaticCache: false
+
+package:
+  individually: false
+  patterns:
+    - '!node_modules/**'
+    - '!venv/**'
+    - '!.venv/**'
+    - '!__pycache__/**'
+    - '!*.pyc'
+    - '!.pytest_cache/**'
+    - '!tests/**'
+    - '!.git/**'
+    - '!.env'
+    - '!.env.example'
+    - '!alembic/**'
+    - '!scripts/**'
+    - '!deployment.zip'
+    - '!deployment-new.zip'
+    - '!package/**'
+    - '!build-package.ps1'
+    - app/**
+    - lambda_handler.py
+    - index.py
+    - requirements.txt
