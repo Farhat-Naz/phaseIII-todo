@@ -5,9 +5,9 @@
 import { getToken, removeToken } from './auth';
 
 // Use empty string in production (proxied via Vercel rewrites), localhost for development
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL === ''
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL1 === ''
   ? ''
-  : process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+  : process.env.NEXT_PUBLIC_API_URL1 || 'http://localhost:8000';
 
 /**
  * Standard API error response structure
