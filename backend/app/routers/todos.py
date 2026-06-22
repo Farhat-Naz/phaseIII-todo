@@ -404,16 +404,16 @@ async def update_todo(
 
 @router.delete(
     "/{todo_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
+    status_code=status.HTTP_200_OK,
     summary="Delete a todo",
     description=(
         "Delete a todo by its ID. "
         "Only deletes the todo if it belongs to the authenticated user. "
         "Returns 404 if todo doesn't exist or belongs to another user. "
-        "Returns 204 No Content on success (no response body)."
+        "Returns 200 with confirmation on success."
     ),
     responses={
-        204: {"description": "Todo deleted successfully (no content)"},
+        200: {"description": "Todo deleted successfully"},
         401: {"description": "Unauthorized - Invalid or missing JWT token"},
         404: {"description": "Todo not found or belongs to another user"}
     }
@@ -422,46 +422,22 @@ async def delete_todo(
     todo_id: UUID,
     current_user: CurrentUser,
     db: DBSession
-) -> None:
-    """
-    Delete a todo with ownership verification.
-
-    Security (CRITICAL):
-    - Query by id AND user_id (ownership verification)
-    - Return 404 (not 403) if not found or belongs to another user
-    - This prevents user enumeration attacks
-    - Hard delete (no soft delete for now)
-
-    Args:
-        todo_id: UUID of the todo to delete
-        current_user: Authenticated user from JWT token
-        db: Database session dependency
-
-    Returns:
-        None: 204 No Content (no response body)
-
-    Raises:
-        HTTPException 401: If JWT token is invalid or missing
-        HTTPException 404: If todo not found or belongs to another user
-    """
+) -> dict:
     # Query with ownership verification (CRITICAL SECURITY)
     statement = select(Todo).where(
         Todo.id == todo_id,
-        Todo.user_id == current_user.id  # MANDATORY - ownership verification
+        Todo.user_id == current_user.id
     )
 
     todo = db.exec(statement).first()
 
     if todo is None:
-        # Return 404 (not 403) to prevent user enumeration
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Todo not found"
         )
 
-    # Delete todo
     db.delete(todo)
     db.commit()
 
-    # 204 No Content (no return value)
-    return None
+    return {"message": "Todo deleted successfully", "id": str(todo_id)}

@@ -161,19 +161,17 @@ export function useTodos(): UseTodosReturn {
   }, [todos]);
 
   /**
-   * Delete a todo with confirmation and optimistic update
+   * Delete a todo with confirmation
    */
   const deleteTodo = useCallback(async (id: string): Promise<boolean> => {
     setError(null);
 
-    // Find todo to delete
     const todoToDelete = todos.find(todo => todo.id === id);
     if (!todoToDelete) {
       setError('Todo not found');
       return false;
     }
 
-    // Confirmation dialog
     const confirmed = window.confirm(
       `Are you sure you want to delete "${todoToDelete.title}"?`
     );
@@ -182,38 +180,21 @@ export function useTodos(): UseTodosReturn {
       return false;
     }
 
-    // Optimistic update: Remove todo from state
+    // Optimistic update
     setTodos(prev => prev.filter(todo => todo.id !== id));
 
     try {
-      // Make API request
       await api.delete(`/api/todos/${id}`);
       return true;
     } catch (err) {
-      // Rollback: Restore deleted todo on error
-      setTodos(prev => {
-        // Insert todo back in original position
-        const index = prev.findIndex(todo =>
-          new Date(todo.created_at) < new Date(todoToDelete.created_at)
-        );
-
-        if (index === -1) {
-          return [...prev, todoToDelete];
-        }
-
-        return [
-          ...prev.slice(0, index),
-          todoToDelete,
-          ...prev.slice(index),
-        ];
-      });
-
+      // Re-fetch from server to get accurate state instead of manual rollback
+      fetchTodos();
       const errorMessage = handleError(err);
       setError(errorMessage);
       console.error('Failed to delete todo:', err);
       return false;
     }
-  }, [todos]);
+  }, [todos, fetchTodos]);
 
   /**
    * Toggle todo completion status
