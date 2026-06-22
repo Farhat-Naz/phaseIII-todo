@@ -6,13 +6,15 @@ services:
     rootDir: backend
     region: singapore
     plan: free
-    branch: 006-high-priority
+    branch: 008-mcp-chatbot
     buildCommand: pip install --upgrade pip && pip install -r requirements.txt
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: DATABASE_URL
         sync: false
       - key: SECRET_KEY
+        sync: false
+      - key: OPENAI_API_KEY
         sync: false
       - key: ALGORITHM
         value: HS256
@@ -21,7 +23,9 @@ services:
       - key: REFRESH_TOKEN_EXPIRE_DAYS
         value: 7
       - key: CORS_ORIGINS
-        value: https://phase-ii-todo.vercel.app
+        value: "*"
+      - key: AI_MODEL
+        value: gpt-4o
       - key: ENV
         value: production
       - key: DEBUG
