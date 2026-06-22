@@ -66,83 +66,89 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
         {/* Features Grid */}
         <div className="grid md:grid-cols-3 gap-8 mt-20">
-          <Card variant="elevated" padding="lg" hover>
-            <div className="text-center">
-              <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center mx-auto mb-4">
-                <svg
-                  className="w-6 h-6 text-primary-600 dark:text-primary-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
+          <Link href={`/${locale}/register`} className="block">
+            <Card variant="elevated" padding="lg" hover className="cursor-pointer h-full">
+              <div className="text-center">
+                <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center mx-auto mb-4">
+                  <svg
+                    className="w-6 h-6 text-primary-600 dark:text-primary-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                </div>
+                <h3 className={`text-xl font-semibold text-gray-900 dark:text-white mb-2 ${locale === 'ur' ? 'font-urdu' : ''}`}>
+                  {t('landing.features')}
+                </h3>
+                <p className={`text-gray-600 dark:text-gray-400 ${locale === 'ur' ? 'font-urdu' : ''}`}>
+                  {t('landing.modernDesc')}
+                </p>
               </div>
-              <h3 className={`text-xl font-semibold text-gray-900 dark:text-white mb-2 ${locale === 'ur' ? 'font-urdu' : ''}`}>
-                {t('landing.features')}
-              </h3>
-              <p className={`text-gray-600 dark:text-gray-400 ${locale === 'ur' ? 'font-urdu' : ''}`}>
-                {t('landing.modernDesc')}
-              </p>
-            </div>
-          </Card>
+            </Card>
+          </Link>
 
-          <Card variant="elevated" padding="lg" hover>
-            <div className="text-center">
-              <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center mx-auto mb-4">
-                <svg
-                  className="w-6 h-6 text-primary-600 dark:text-primary-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"
-                  />
-                </svg>
+          <Link href={`/${locale}/register`} className="block">
+            <Card variant="elevated" padding="lg" hover className="cursor-pointer h-full">
+              <div className="text-center">
+                <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center mx-auto mb-4">
+                  <svg
+                    className="w-6 h-6 text-primary-600 dark:text-primary-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"
+                    />
+                  </svg>
+                </div>
+                <h3 className={`text-xl font-semibold text-gray-900 dark:text-white mb-2 ${locale === 'ur' ? 'font-urdu' : ''}`}>
+                  {t('landing.voiceInput')}
+                </h3>
+                <p className={`text-gray-600 dark:text-gray-400 ${locale === 'ur' ? 'font-urdu' : ''}`}>
+                  {t('landing.voiceInputDesc')}
+                </p>
               </div>
-              <h3 className={`text-xl font-semibold text-gray-900 dark:text-white mb-2 ${locale === 'ur' ? 'font-urdu' : ''}`}>
-                {t('landing.voiceInput')}
-              </h3>
-              <p className={`text-gray-600 dark:text-gray-400 ${locale === 'ur' ? 'font-urdu' : ''}`}>
-                {t('landing.voiceInputDesc')}
-              </p>
-            </div>
-          </Card>
+            </Card>
+          </Link>
 
-          <Card variant="elevated" padding="lg" hover>
-            <div className="text-center">
-              <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center mx-auto mb-4">
-                <svg
-                  className="w-6 h-6 text-primary-600 dark:text-primary-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"
-                  />
-                </svg>
+          <Link href={locale === 'en' ? '/ur' : '/en'} className="block">
+            <Card variant="elevated" padding="lg" hover className="cursor-pointer h-full">
+              <div className="text-center">
+                <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-lg flex items-center justify-center mx-auto mb-4">
+                  <svg
+                    className="w-6 h-6 text-primary-600 dark:text-primary-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"
+                    />
+                  </svg>
+                </div>
+                <h3 className={`text-xl font-semibold text-gray-900 dark:text-white mb-2 ${locale === 'ur' ? 'font-urdu' : ''}`}>
+                  {t('landing.multilingual')}
+                </h3>
+                <p className={`text-gray-600 dark:text-gray-400 ${locale === 'ur' ? 'font-urdu' : ''}`}>
+                  {t('landing.multilingualDesc')}
+                </p>
               </div>
-              <h3 className={`text-xl font-semibold text-gray-900 dark:text-white mb-2 ${locale === 'ur' ? 'font-urdu' : ''}`}>
-                {t('landing.multilingual')}
-              </h3>
-              <p className={`text-gray-600 dark:text-gray-400 ${locale === 'ur' ? 'font-urdu' : ''}`}>
-                {t('landing.multilingualDesc')}
-              </p>
-            </div>
-          </Card>
+            </Card>
+          </Link>
         </div>
 
         {/* CTA Section */}
