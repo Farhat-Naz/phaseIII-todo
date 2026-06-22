@@ -13,6 +13,7 @@ email-validator==2.2.0
 greenlet==3.2.5
 alembic==1.14.0
 openai>=1.0.0
+anthropic>=0.40.0
 
 # AWS Lambda adapter for ASGI applications
 mangum==0.17.0

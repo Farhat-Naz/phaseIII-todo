@@ -22,29 +22,29 @@ from sqlmodel import Session, select
 from app.dependencies import CurrentUser
 from app.models import User, ChatSession, ChatMessage
 from app.database import get_db
-from app.mcp.openai_client import get_openai_client
+from app.mcp.claude_client import get_claude_client
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["Chat"])
 
 
-@router.get("/test", summary="Test OpenAI client initialization")
-async def test_openai_client():
-    """Test endpoint to verify OpenAI client can be initialized."""
+@router.get("/test", summary="Test Claude client initialization")
+async def test_claude_client():
+    """Test endpoint to verify Claude client can be initialized."""
     try:
-        client = get_openai_client()
+        client = get_claude_client()
         return {
             "status": "success",
-            "message": "OpenAI client initialized successfully",
+            "message": "Claude client initialized successfully",
             "model": client.model,
         }
     except Exception as e:
-        logger.error(f"OpenAI client test failed: {e}", exc_info=True)
+        logger.error(f"Claude client test failed: {e}", exc_info=True)
         return {
             "status": "error",
             "message": str(e),
-            "detail": "Check OPENAI_API_KEY environment variable",
+            "detail": "Check ANTHROPIC_API_KEY environment variable",
         }
 
 
@@ -131,30 +131,30 @@ async def send_message(
         db.commit()
         logger.debug("User message saved")
 
-        # Get OpenAI client and send request with MCP tools
-        logger.info("Initializing OpenAI client...")
+        # Get Claude client and send request with MCP tools
+        logger.info("Initializing Claude client...")
         try:
-            client = get_openai_client()
-            logger.info("OpenAI client initialized successfully")
+            client = get_claude_client()
+            logger.info("Claude client initialized successfully")
         except Exception as client_error:
-            logger.error(f"Failed to initialize OpenAI client: {client_error}", exc_info=True)
+            logger.error(f"Failed to initialize Claude client: {client_error}", exc_info=True)
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"OpenAI client initialization failed: {str(client_error)}"
+                detail=f"Claude client initialization failed: {str(client_error)}"
             )
 
-        logger.info("Sending request to OpenAI...")
+        logger.info("Sending request to Claude...")
         try:
             assistant_response = await client.chat(
                 messages=history,
                 user_id=current_user.id,
             )
-            logger.info(f"Received response from OpenAI: {assistant_response[:100]}...")
-        except Exception as openai_error:
-            logger.error(f"OpenAI API call failed: {openai_error}", exc_info=True)
+            logger.info(f"Received response from Claude: {assistant_response[:100]}...")
+        except Exception as claude_error:
+            logger.error(f"Claude API call failed: {claude_error}", exc_info=True)
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"OpenAI API error: {str(openai_error)}"
+                detail=f"Claude API error: {str(claude_error)}"
             )
 
         # Save assistant response to database

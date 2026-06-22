@@ -14,7 +14,7 @@ services:
         sync: false
       - key: SECRET_KEY
         sync: false
-      - key: OPENAI_API_KEY
+      - key: ANTHROPIC_API_KEY
         sync: false
       - key: ALGORITHM
         value: HS256
@@ -25,7 +25,7 @@ services:
       - key: CORS_ORIGINS
         value: "*"
       - key: AI_MODEL
-        value: gpt-4o
+        value: claude-haiku-4-5-20251001
       - key: ENV
         value: production
       - key: DEBUG
